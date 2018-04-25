@@ -1,9 +1,9 @@
 package util
 
 import (
-	"Seckill/pkg/setting"
 	 jwt "github.com/dgrijalva/jwt-go"
 	"time"
+	"gin-docker-mysql/pkg/setting"
 )
 
 

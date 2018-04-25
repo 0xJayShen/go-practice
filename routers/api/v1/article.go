@@ -6,8 +6,10 @@ import (
 	"github.com/Unknwon/com"
 	"github.com/gin-gonic/gin"
 
-	"Seckill/models"
-	"Seckill/pkg/e"
+	"gin-docker-mysql/models"
+	"gin-docker-mysql/pkg/e"
+	"gin-docker-mysql/pkg/setting"
+	"gin-docker-mysql/pkg/util"
 )
 
 // @Summary 获取单个文章
@@ -62,11 +64,26 @@ func GetArticles(c *gin.Context) {
 
 	maps["deleted_on"] = 0
 
-	code := e.INVALID_PARAMS
+	if arg := c.PostForm("state"); arg != "" {
+		state = com.StrTo(arg).MustInt()
+		maps["state"] = state
 
-		code = e.SUCCESS
 
-		data["lists"] = models.GetArticles( maps)
+	}
+
+
+	if arg := c.PostForm("tag_id"); arg != "" {
+		tagId = com.StrTo(arg).MustInt()
+		maps["tag_id"] = tagId
+
+
+	}
+
+	maps["deleted_on"] = 0
+
+		code := e.SUCCESS
+
+		data["lists"] = models.GetArticles(util.GetPage(c), setting.PageSize, maps)
 		data["total"] = models.GetArticleTotal(maps)
 
 
@@ -106,7 +123,7 @@ func AddArticle(c *gin.Context) {
 		data["created_by"] = createdBy
 		data["state"] = state
 
-		models.AddArticle(data)
+		//models.AddArticle(data)
 		code = e.SUCCESS
 	} else {
 		code = e.ERROR_NOT_EXIST_TAG

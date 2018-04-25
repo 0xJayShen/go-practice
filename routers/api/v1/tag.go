@@ -2,11 +2,13 @@ package v1
 
 import (
 	"github.com/gin-gonic/gin"
-	"Seckill/pkg/e"
+	"gin-docker-mysql/pkg/e"
 	"net/http"
 	"github.com/Unknwon/com"
-	"Seckill/models"
+	"gin-docker-mysql/models"
 	"fmt"
+	"gin-docker-mysql/pkg/util"
+	"gin-docker-mysql/pkg/setting"
 )
 
 //获取多个文章标签
@@ -20,15 +22,21 @@ func GetTags(c *gin.Context) {
 		maps["name"] = name
 	}
 
-	var state int = -1
+	var code int
+
 	if arg := c.Query("state"); arg != "" {
-		state = com.StrTo(arg).MustInt()
+		state := com.StrTo(arg).MustInt()
 		maps["state"] = state
+		code = e.SUCCESS
+
+	}else {
+		maps["state"] = 1
+		code = e.SUCCESS
+
 	}
 
-	code := e.SUCCESS
 
-	//data["lists"] = models.GetTags()
+	data["lists"] = models.GetTags(util.GetPage(c), setting.PageSize, maps)
 	data["total"] = models.GetTagTotal(maps)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -44,9 +52,7 @@ func AddTag(c *gin.Context) {
 	state := com.StrTo(c.DefaultQuery("state", "0")).MustInt()
 	createdBy := c.Query("created_by")
 
-	code := e.INVALID_PARAMS
-
-	code = e.SUCCESS
+	code := e.SUCCESS
 	fmt.Println(name, state, createdBy)
 	models.AddTag(name, state, createdBy)
 
@@ -65,9 +71,9 @@ func EditTag(c *gin.Context) {
 
 	var state int = -1
 
-	code := e.INVALID_PARAMS
 
-	code = e.SUCCESS
+
+	code := e.SUCCESS
 	if models.ExistTagByID(id) {
 		data := make(map[string]interface{})
 		data["modified_by"] = modifiedBy
@@ -91,11 +97,11 @@ func EditTag(c *gin.Context) {
 //删除文章标签
 func DeleteTag(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
+	fmt.Println(id)
 
-	code := e.INVALID_PARAMS
-
-	code = e.SUCCESS
+	code := e.SUCCESS
 	if models.ExistTagByID(id) {
+		fmt.Println()
 		models.DeleteTag(id)
 	} else {
 		code = e.ERROR_NOT_EXIST_TAG
@@ -107,3 +113,18 @@ func DeleteTag(c *gin.Context) {
 		"data": make(map[string]string),
 	})
 }
+//func A(c *gin.Context){
+//	maps := make(map[string]interface{})
+//	data := make(map[string]interface{})
+//
+//	arg := c.Query("state")
+//	state := com.StrTo(arg).MustInt()
+//	fmt.Println(state)
+//	maps["state"] = state
+//	data["total"] = models.GetTags(maps)
+//	fmt.Println(data)
+//	c.JSON(http.StatusOK, gin.H{
+//
+//		"data": data,
+//	})
+//}

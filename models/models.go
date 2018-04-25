@@ -3,7 +3,7 @@
 //import (
 //	"github.com/jinzhu/gorm"
 //	_ "github.com/jinzhu/gorm/dialects/mysql"
-//	"Seckill/pkg/setting"
+//	"gin-docker-mysql/pkg/setting"
 //	"fmt"
 //	"log"
 //	"time"
@@ -86,26 +86,25 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"Seckill/pkg/setting"
+	"gin-docker-mysql/pkg/setting"
 
 	"time"
-	"Seckill/pkg/logging"
-
+	//"gin-docker-mysql/pkg/logging"
 )
 
 var db *gorm.DB
 
 type Model struct {
-	ID int `gorm:"primary_key" json:"id"`
-	CreatedOn int `json:"created_on"`
+	ID         int `gorm:"primary_key" json:"id"`
+	CreatedOn  int `json:"created_on"`
 	ModifiedOn int `json:"modified_on"`
-	DeletedOn  int `json:"deleted_on"`
+	DeletedAt *time.Time
 }
-func init() {
 
+func init() {
 	var (
-		err error
-		dbType, dbName, user, password, host string
+		err                                               error
+		dbType, dbName, user, password, host  string
 	)
 
 	sec, err := setting.Cfg.GetSection("database")
@@ -118,7 +117,6 @@ func init() {
 	user = sec.Key("USER").String()
 	password = sec.Key("PASSWORD").String()
 	host = sec.Key("HOST").String()
-	fmt.Println(user,password,host)
 	//tablePrefix = sec.Key("TABLE_PREFIX").String()
 
 	db, err = gorm.Open(dbType, fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
@@ -126,24 +124,22 @@ func init() {
 		password,
 		host,
 		dbName))
-	fmt.Println(11111)
-	if err != nil{
-		logging.Error(err)
-	}
-	db.SingularTable(true)
-
-	db.AutoMigrate(&Tag{},&Auth{},&Article{})
-	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&Tag{},&Auth{},&Article{})
 
 	if err != nil {
-		logging.Info(err)
+		log.Println(err)
 	}
 
-	//gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string  {
-	//	return tablePrefix + defaultTableName;
+	//gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
+	//	return tablePrefix + defaultTableName
 	//}
-
 	db.SingularTable(true)
+
+	db.AutoMigrate(&Auth{}, &Article{}, &Tag{})
+
+
+	db.Callback().Create().Replace("gorm:update_time_stamp", updateTimeStampForCreateCallback)
+	db.Callback().Update().Replace("gorm:update_time_stamp", updateTimeStampForUpdateCallback)
+	//db.Callback().Delete().Replace("gorm:delete", deleteCallback)
 	db.DB().SetMaxIdleConns(10)
 	db.DB().SetMaxOpenConns(100)
 }
@@ -151,14 +147,64 @@ func init() {
 func CloseDB() {
 	defer db.Close()
 }
-func (tag *Tag) BeforeCreate(scope *gorm.Scope) error {
-	scope.SetColumn("CreatedOn", time.Now().Unix())
 
-	return nil
+// updateTimeStampForCreateCallback will set `CreatedOn`, `ModifiedOn` when creating
+func updateTimeStampForCreateCallback(scope *gorm.Scope) {
+	if !scope.HasError() {
+		nowTime := time.Now().Unix()
+		if createTimeField, ok := scope.FieldByName("CreatedOn"); ok {
+			if createTimeField.IsBlank {
+				createTimeField.Set(nowTime)
+			}
+		}
+
+		if modifyTimeField, ok := scope.FieldByName("ModifiedOn"); ok {
+			if modifyTimeField.IsBlank {
+				modifyTimeField.Set(nowTime)
+			}
+		}
+	}
 }
 
-func (tag *Tag) BeforeUpdate(scope *gorm.Scope) error {
-	scope.SetColumn("ModifiedOn", time.Now().Unix())
+// updateTimeStampForUpdateCallback will set `ModifiedOn` when updating
+func updateTimeStampForUpdateCallback(scope *gorm.Scope) {
+	if _, ok := scope.Get("gorm:update_column"); !ok {
+		scope.SetColumn("ModifiedOn", time.Now().Unix())
+	}
+}
 
-	return nil
+func deleteCallback(scope *gorm.Scope) {
+	if !scope.HasError() {
+		var extraOption string
+		if str, ok := scope.Get("gorm:delete_option"); ok {
+			extraOption = fmt.Sprint(str)
+		}
+
+		deletedOnField, hasDeletedOnField := scope.FieldByName("DeletedOn")
+
+		if !scope.Search.Unscoped && hasDeletedOnField {
+			scope.Raw(fmt.Sprintf(
+				"UPDATE %v SET %v=%v%v%v",
+				scope.QuotedTableName(),
+				scope.Quote(deletedOnField.DBName),
+				scope.AddToVars(time.Now().Unix()),
+				addExtraSpaceIfExist(scope.CombinedConditionSql()),
+				addExtraSpaceIfExist(extraOption),
+			)).Exec()
+		} else {
+			scope.Raw(fmt.Sprintf(
+				"DELETE FROM %v%v%v",
+				scope.QuotedTableName(),
+				addExtraSpaceIfExist(scope.CombinedConditionSql()),
+				addExtraSpaceIfExist(extraOption),
+			)).Exec()
+		}
+	}
+}
+
+func addExtraSpaceIfExist(str string) string {
+	if str != "" {
+		return " " + str
+	}
+	return ""
 }

@@ -1,7 +1,10 @@
-FROM scratch
+FROM golang:latest
 
-WORKDIR $GOPATH/src/Seckill
-COPY . $GOPATH/src/Seckill
+WORKDIR $GOPATH/src/gin-docker-mysql
+COPY . $GOPATH/src/gin-docker-mysql
 
 EXPOSE 8000
-CMD ["./go-gin-example"]
+RUN go build .
+
+EXPOSE 8000
+ENTRYPOINT ["./gin-docker-mysql"]

@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"Seckill/pkg/e"
-	"Seckill/pkg/util"
-	"Seckill/models"
+	"gin-docker-mysql/pkg/e"
+	"gin-docker-mysql/pkg/util"
+	"gin-docker-mysql/models"
 )
 
 type auth struct {

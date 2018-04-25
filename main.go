@@ -2,17 +2,20 @@ package main
 
 import (
 	"fmt"
-	"Seckill/routers"
-	"Seckill/pkg/setting"
+	"gin-docker-mysql/routers"
+	"gin-docker-mysql/pkg/setting"
 	"log"
 	"os"
 	"os/signal"
 	"time"
 	"net/http"
 	"context"
+
 )
 
 func main() {
+
+
 	router := routers.InitRouter()
 
 	s := &http.Server{
@@ -28,6 +31,7 @@ func main() {
 			log.Printf("Listen: %s\n", err)
 		}
 	}()
+
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
