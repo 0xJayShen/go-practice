@@ -16,6 +16,9 @@ import (
 func main() {
 
 
+	//c := redisP.Get()
+
+
 	router := routers.InitRouter()
 
 	s := &http.Server{
@@ -25,7 +28,6 @@ func main() {
 		WriteTimeout:   setting.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-
 	go func() {
 		if err := s.ListenAndServe(); err != nil {
 			log.Printf("Listen: %s\n", err)

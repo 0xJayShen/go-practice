@@ -13,7 +13,7 @@ type Tag struct {
 
 func ExistTagByName(name string) bool {
 	var tag Tag
-	db.Select("id").Where("name = ? AND deleted_on = ? ", name, 0).First(&tag)
+	DB.Select("id").Where("name = ? AND deleted_on = ? ", name, 0).First(&tag)
 	if tag.ID > 0 {
 		return true
 	}
@@ -22,7 +22,7 @@ func ExistTagByName(name string) bool {
 }
 
 func AddTag(name string, state int, createdBy string) bool {
-	db.Create(&Tag{
+	DB.Create(&Tag{
 		Name:      name,
 		State:     state,
 		CreatedBy: createdBy,
@@ -32,20 +32,20 @@ func AddTag(name string, state int, createdBy string) bool {
 }
 
 func GetTags(pageNum int, pageSize int, maps interface{}) (tags []Tag) {
-	db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&tags)
+	DB.Where(maps).Offset(pageNum).Limit(pageSize).Find(&tags)
 
 	return
 }
 
 func GetTagTotal(maps interface{}) (count int) {
-	db.Model(&Tag{}).Where(maps).Count(&count)
+	DB.Model(&Tag{}).Where(maps).Count(&count)
 
 	return
 }
 
 func ExistTagByID(id int) bool {
 	var tag Tag
-	db.Select("id").Where("id = ? ", id,).First(&tag)
+	DB.Select("id").Where("id = ? ", id,).First(&tag)
 	fmt.Println(tag.ID)
 	if tag.ID > 0 {
 		return true
@@ -55,13 +55,13 @@ func ExistTagByID(id int) bool {
 }
 
 func DeleteTag(id int) bool {
-	db.Where("id = ?", id).Delete(&Tag{})
+	DB.Where("id = ?", id).Delete(&Tag{})
 
 	return true
 }
 
 func EditTag(id int, data interface{}) bool {
-	db.Model(&Tag{}).Where("id = ? AND deleted_on = ? ", id, 0).Updates(data)
+	DB.Model(&Tag{}).Where("id = ? AND deleted_on = ? ", id, 0).Updates(data)
 
 	return true
 }

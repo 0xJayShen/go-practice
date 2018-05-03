@@ -92,7 +92,7 @@ import (
 	//"gin-docker-mysql/pkg/logging"
 )
 
-var db *gorm.DB
+var DB *gorm.DB
 
 type Model struct {
 	ID         int `gorm:"primary_key" json:"id"`
@@ -109,6 +109,7 @@ func init() {
 
 	sec, err := setting.Cfg.GetSection("database")
 	if err != nil {
+		fmt.Println("error")
 		log.Fatal(2, "Fail to get section 'database': %v", err)
 	}
 
@@ -119,7 +120,7 @@ func init() {
 	host = sec.Key("HOST").String()
 	//tablePrefix = sec.Key("TABLE_PREFIX").String()
 
-	db, err = gorm.Open(dbType, fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+	DB, err = gorm.Open(dbType, fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		user,
 		password,
 		host,
@@ -128,24 +129,24 @@ func init() {
 	if err != nil {
 		log.Println(err)
 	}
-
+	fmt.Println("数据库连接")
 	//gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
 	//	return tablePrefix + defaultTableName
 	//}
-	db.SingularTable(true)
+	DB.SingularTable(true)
 
-	db.AutoMigrate(&Auth{}, &Article{}, &Tag{})
+	DB.AutoMigrate(&Auth{}, &Article{}, &Tag{},&Comment{})
 
 
-	db.Callback().Create().Replace("gorm:update_time_stamp", updateTimeStampForCreateCallback)
-	db.Callback().Update().Replace("gorm:update_time_stamp", updateTimeStampForUpdateCallback)
+	DB.Callback().Create().Replace("gorm:update_time_stamp", updateTimeStampForCreateCallback)
+	DB.Callback().Update().Replace("gorm:update_time_stamp", updateTimeStampForUpdateCallback)
 	//db.Callback().Delete().Replace("gorm:delete", deleteCallback)
-	db.DB().SetMaxIdleConns(10)
-	db.DB().SetMaxOpenConns(100)
+	DB.DB().SetMaxIdleConns(10)
+	DB.DB().SetMaxOpenConns(100)
 }
 
 func CloseDB() {
-	defer db.Close()
+	defer DB.Close()
 }
 
 // updateTimeStampForCreateCallback will set `CreatedOn`, `ModifiedOn` when creating

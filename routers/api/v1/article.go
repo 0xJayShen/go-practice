@@ -21,10 +21,12 @@ func GetArticle(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 
 	code := e.INVALID_PARAMS
-	var data interface{}
+	var data map[string]interface{}
+	data = make(map[string]interface{})
 
 	if models.ExistArticleByID(id) {
-		data = models.GetArticle(id)
+		data["article"] = models.GetArticle(id)
+		data["comments"] = models.GetComments(id)
 		code = e.SUCCESS
 	} else {
 		code = e.ERROR_NOT_EXIST_ARTICLE
@@ -36,6 +38,7 @@ func GetArticle(c *gin.Context) {
 		"data": data,
 	})
 }
+
 
 // @Summary 获取多个文章
 // @Produce  json

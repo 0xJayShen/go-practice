@@ -1,4 +1,3 @@
-
 package routers
 
 import (
@@ -11,8 +10,8 @@ import (
 	_ "gin-docker-mysql/docs"
 
 	//"gin-docker-mysql/middleware/jwt"
-	//"github.com/swaggo/gin-swagger"
-	//"github.com/swaggo/gin-swagger/swaggerFiles"
+	"github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
 func InitRouter() *gin.Engine {
@@ -22,18 +21,13 @@ func InitRouter() *gin.Engine {
 
 	r.Use(gin.Recovery())
 
-
 	gin.SetMode(setting.RunMode)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	apiv1 := r.Group("/api/v1")
 	//apiv1.Use(jwt.JWT())
 
-
-	//r.GET("/auth", api.GetAuth)
-
-
 	r.GET("/auth", api.GetAuth)
-
 
 	{
 		//获取标签列表
@@ -41,7 +35,6 @@ func InitRouter() *gin.Engine {
 		apiv1.GET("/tags", v1.GetTags)
 		//新建标签
 		apiv1.POST("/tags", v1.AddTag)
-
 
 		//更新指定标签
 		apiv1.PUT("/tags/:id", v1.EditTag)
@@ -58,7 +51,6 @@ func InitRouter() *gin.Engine {
 		//删除指定文章
 		apiv1.DELETE("/articles/:id", v1.DeleteArticle)
 	}
-	//r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return r
 }
