@@ -12,7 +12,7 @@ type Comment struct {
 	State      int    `json:"state"`
 }
 func GetComments(maps interface{}) (comments []Comment) {
-	db.Preload("Article").Where(maps).Find(&comments)
+	DB.Preload("Article").Where(maps).Find(&comments)
 
 	return
 }

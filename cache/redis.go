@@ -6,8 +6,6 @@ import (
 	"time"
 	"gin-docker-mysql/pkg/setting"
 	"fmt"
-	"github.com/astaxie/beego/cache"
-	"gin-docker-mysql/models"
 )
 
 //type Pool struct {
@@ -38,7 +36,7 @@ var (
 func init() {
 
 	var (
-		redis_address string
+		redis_address                      string
 		max_idle, max_active, idle_timeout int
 	)
 
@@ -52,7 +50,7 @@ func init() {
 	idle_timeout = sec.Key("RedisIdleTimeout").MustInt(1)
 
 	RedisPool = &redis.Pool{
-		MaxIdle:    max_idle,
+		MaxIdle:     max_idle,
 		MaxActive:   max_active,
 		IdleTimeout: time.Duration(idle_timeout) * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -75,32 +73,8 @@ func init() {
 	//redisPool.Close()
 }
 
-func CloseRedis(){
+func CloseRedis() {
 	defer RedisPool.Close()
 }
 
 
-func CacheHotArticle(){
-	var articleList []*models.Article
-	models.DB.Model(&models.Article{}).Where("state = ?", 1).Find(&articleList)
-	for _,article :=range articleList{
-		_,err := RedisPool.Get().Do("HMSET",article.ID,"tittle",article.Title,"content",article.Content,"creater_time",article.CreatedOn)
-
-		if err!=nil{
-			fmt.Println(err)
-		}
-		//hvalall, _ := redis.StringMap(c.Do("hgetall", hash_key))
-		articl_title ,err:=  redis.String(RedisPool.Get().Do("HGET",article.ID,"tittle"))
-		fmt.Println(articl_title)
-		if err!=nil{
-			fmt.Println(err)
-		}
-	}
-}
-func TimingCache(){
-	c := time.Tick(86400 * time.Second)
-	for {
-		<- c
-		go CacheHotArticle()
-	}
-}

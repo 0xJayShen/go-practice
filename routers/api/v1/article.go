@@ -10,6 +10,7 @@ import (
 	"gin-docker-mysql/pkg/e"
 	"gin-docker-mysql/pkg/setting"
 	"gin-docker-mysql/pkg/util"
+	"fmt"
 )
 
 // @Summary 获取单个文章
@@ -65,7 +66,7 @@ func GetArticles(c *gin.Context) {
 		maps["tag_id"] = tagId
 	}
 
-	maps["deleted_on"] = 0
+
 
 	if arg := c.PostForm("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
@@ -82,7 +83,6 @@ func GetArticles(c *gin.Context) {
 
 	}
 
-	maps["deleted_on"] = 0
 
 		code := e.SUCCESS
 
@@ -170,6 +170,7 @@ func EditArticle(c *gin.Context) {
 
 	if models.ExistArticleByID(id) {
 		if models.ExistTagByID(tagId) {
+			fmt.Println("cunzai ")
 			data := make(map[string]interface{})
 			if tagId > 0 {
 				data["tag_id"] = tagId

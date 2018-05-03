@@ -13,7 +13,7 @@ type Tag struct {
 
 func ExistTagByName(name string) bool {
 	var tag Tag
-	DB.Select("id").Where("name = ? AND deleted_on = ? ", name, 0).First(&tag)
+	DB.Select("id").Where("name = ?", name, 0).First(&tag)
 	if tag.ID > 0 {
 		return true
 	}
@@ -61,7 +61,7 @@ func DeleteTag(id int) bool {
 }
 
 func EditTag(id int, data interface{}) bool {
-	DB.Model(&Tag{}).Where("id = ? AND deleted_on = ? ", id, 0).Updates(data)
+	DB.Model(&Tag{}).Where("id = ?", id).Updates(data)
 
 	return true
 }
