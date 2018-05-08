@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"gin-docker-mysql/cache"
 	"gin-docker-mysql/pkg/logging"
-
 	"time"
+
+	"encoding/json"
 )
 
 type Article struct {
@@ -43,30 +44,60 @@ func GetArticleTotal(maps interface{}) (count int) {
 
 func GetArticles(pageNum int, pageSize int, maps interface{}) (articles []Article) {
 	DB.Preload("Tag").Where(maps).Offset(pageNum).Limit(pageSize).Find(&articles)
-	//Preload就是一个预加载器，它会执行两条SQL，分别是SELECT * FROM blog_articles;和SELECT * FROM blog_tag WHERE id IN (1,2,3,4);，那么在查询出结构后，gorm内部处理对应的映射逻辑，将其填充到Article的Tag中，会特别方便，并且避免了循环查询
+	//Preload就是一个预加载器，它会执行两条SQL，分别是SELECT * FROM blog_articles;和SELECT * FROM blog_tag WHERE id IN (1,2,3,4);，那么在查询出结构后，gorm内部处理对应的映射逻辑，将其填充到Article的Tag中，并且避免了循环查询
+	//gorm的Join
+
 	return
 }
 
 func GetArticle(id int) interface{} {
-
-	is_key_exit, _ := redis.Bool(cache.RedisPool.Get().Do("EXISTS", id))
+	conn := cache.RedisPool.Get()
+	defer  conn.Close()
+	is_key_exit, _ := redis.Bool(conn.Do("EXISTS", id))
+	fmt.Println(is_key_exit)
 	if is_key_exit {
-		article, _ := redis.StringMap(cache.RedisPool.Get().Do("HGETALL", id))
-		fmt.Println(article)
-		return article
+
+		//article,_ := redis.StringMap(conn.Do("HGETALL", id))
+		//
+		//ret = make(map[string]interface{})
+		//
+		//return article
+		var imapGet map[string]interface{}
+		valueGet, err := redis.Bytes(conn.Do("GET", id))
+		if err != nil {
+			fmt.Println(err)
+		}
+		_ = json.Unmarshal(valueGet, &imapGet)
+		fmt.Println(imapGet["tag"])
+		fmt.Println(imapGet["title"])
+
+		return imapGet
+
 	} else {
+		fmt.Println("没调用缓存")
 		var article Article
-		DB.Where("id =? ", id).First(&article)
+		DB.Where("id = ?", id).First(&article)
 		DB.Model(&article).Related(&article.Tag)
 		//Article有一个结构体成员是TagID，就是外键。gorm会通过类名+ID的方式去找到这两个类之间的关联关系
-		//Article有一个结构体成员是Tag，就是我们嵌套在Article里的Tag结构体，我们可以通过Related进行关联查询
-		_, err := cache.RedisPool.Get().Do("HMSET", article.ID, "tittle", article.Title, "content", article.Content, "creater_time", article.CreatedOn, "ModifiedOn", article.ModifiedOn)
+		//Article有一个结构体成员是Tag嵌套在Article里的Tag结构体，我们可以通过Related进行关联查询
+		//fmt.Println(reflect.TypeOf(article))
+		//jsons,err:=json.Marshal(article)
+		//_, err = conn.Do("HMSET", article.ID,"article",jsons )
+		//if err != nil {
+		//	fmt.Println(err)
+		//	logging.Error("取文章时存缓存出错 %v %v", article.ID, time.Now().Format("2006-01-02 15:04:05"))
+		//}
+		value := map[string]interface{}{"title":article.Title,"tag":article.Tag,"content":article.Content}
+		value_json,_ := json.Marshal(value)
+		_,err :=  conn.Do("SET",article.ID,value_json)
 		if err != nil {
+			fmt.Println(err)
 			logging.Error("取文章时存缓存出错 %v %v", article.ID, time.Now().Format("2006-01-02 15:04:05"))
 		}
-		fmt.Println(article.Content)
+
 		return article
 	}
+
 }
 
 func EditArticle(id int, data interface{}) bool {

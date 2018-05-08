@@ -35,6 +35,7 @@ func JWT() gin.HandlerFunc {
 			})
 
 			c.Abort()
+			//停止
 			return
 		}
 

@@ -40,7 +40,6 @@ func GetArticle(c *gin.Context) {
 	})
 }
 
-
 // @Summary 获取多个文章
 // @Produce  json
 // @Param tag_id query int false "TagID"
@@ -57,7 +56,6 @@ func GetArticles(c *gin.Context) {
 		state = com.StrTo(arg).MustInt()
 		maps["state"] = state
 
-
 	}
 
 	var tagId int = -1
@@ -66,29 +64,22 @@ func GetArticles(c *gin.Context) {
 		maps["tag_id"] = tagId
 	}
 
-
-
 	if arg := c.PostForm("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
 		maps["state"] = state
 
-
 	}
-
 
 	if arg := c.PostForm("tag_id"); arg != "" {
 		tagId = com.StrTo(arg).MustInt()
 		maps["tag_id"] = tagId
 
-
 	}
 
+	code := e.SUCCESS
 
-		code := e.SUCCESS
-
-		data["lists"] = models.GetArticles(util.GetPage(c), setting.PageSize, maps)
-		data["total"] = models.GetArticleTotal(maps)
-
+	data["lists"] = models.GetArticles(util.GetPage(c), setting.PageSize, maps)
+	data["total"] = models.GetArticleTotal(maps)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,

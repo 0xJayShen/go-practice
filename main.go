@@ -10,13 +10,11 @@ import (
 	"time"
 	"net/http"
 	"context"
-	"gin-docker-mysql/models"
-	//"gin-docker-mysql/timing"
+	"gin-docker-mysql/timing"
 )
 
 func main() {
-	//timing.CacheHotArticle()
-	models.EditArticle(2,map[string]interface{}{"title":"00000"})
+	 go timing.TimingCache()
 
 
 	//c := redisP.Get()
